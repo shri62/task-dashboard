@@ -1,4 +1,7 @@
 
+// Import React hooks
+import { useMemo, useState } from "react";
+
 // Import TypeScript types
 import type {
   TaskFilterProps,
@@ -6,7 +9,25 @@ import type {
   TaskPriority,
 } from "../../types";
 
-function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
+function TaskFilter({ tasks, filters, onFilterChange }: TaskFilterProps) {
+
+  // Show or hide search suggestions
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Find matching tasks while typing
+  const suggestions = useMemo(() => {
+    const search = filters.searchTerm.trim().toLowerCase();
+
+    if (!search) {
+      return [];
+    }
+
+    return tasks.filter((task) =>
+      `${task.title} ${task.description}`
+        .toLowerCase()
+        .includes(search)
+    ).slice(0, 5);
+  }, [tasks, filters.searchTerm]);
 
   // Update search text
   const handleSearch = (value: string) => {
@@ -14,9 +35,21 @@ function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
       ...filters,
       searchTerm: value,
     });
+
+    setShowSuggestions(true);
   };
 
-  // Filter tasks by status
+  // Select a suggested task
+  const handleSuggestionClick = (title: string) => {
+    onFilterChange({
+      ...filters,
+      searchTerm: title,
+    });
+
+    setShowSuggestions(false);
+  };
+
+  // Update task status
   const handleStatusChange = (value: TaskStatus | "all") => {
     onFilterChange({
       ...filters,
@@ -24,7 +57,7 @@ function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
     });
   };
 
-  // Filter tasks by priority
+  // Update task priority
   const handlePriorityChange = (value: TaskPriority | "all") => {
     onFilterChange({
       ...filters,
@@ -40,9 +73,11 @@ function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
       status: "all",
       priority: "all",
     });
+
+    setShowSuggestions(false);
   };
 
-  // Check whether any filter is selected
+  // Check whether any filter is active
   const hasActiveFilters =
     filters.searchTerm.trim() !== "" ||
     filters.status !== "all" ||
@@ -57,14 +92,47 @@ function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 
-        {/* Search tasks */}
-        <input
-          type="search"
-          value={filters.searchTerm}
-          onChange={(event) => handleSearch(event.target.value)}
-          placeholder="Search tasks..."
-          className="rounded-lg border p-3"
-        />
+        {/* Search with autocomplete */}
+        <div className="relative">
+          <input
+            type="search"
+            value={filters.searchTerm}
+            onChange={(event) => handleSearch(event.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            placeholder="Search tasks..."
+            className="w-full rounded-lg border p-3"
+          />
+
+          {/* Show matching task suggestions */}
+          {showSuggestions && filters.searchTerm.trim() && (
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border bg-white shadow-lg">
+
+              {suggestions.length > 0 ? (
+                suggestions.map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => handleSuggestionClick(task.title)}
+                    className="block w-full border-b p-3 text-left hover:bg-blue-50"
+                  >
+                    <p className="font-medium text-gray-800">
+                      {task.title}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      {task.description}
+                    </p>
+                  </button>
+                ))
+              ) : (
+                <p className="p-3 text-sm text-gray-500">
+                  No matching tasks found.
+                </p>
+              )}
+
+            </div>
+          )}
+        </div>
 
         {/* Filter by status */}
         <select
@@ -96,7 +164,7 @@ function TaskFilter({ filters, onFilterChange }: TaskFilterProps) {
 
       </div>
 
-      {/* Show active filters */}
+      {/* Display active filters */}
       <div className="flex flex-wrap items-center gap-2">
 
         <span className="text-sm font-medium text-gray-600">

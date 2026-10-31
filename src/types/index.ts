@@ -57,8 +57,10 @@ export interface TaskFormProps {
   onCancel?: () => void;
 }
 
-// TaskFilter component props
+
+// Props for the TaskFilter component
 export interface TaskFilterProps {
+  tasks: Task[];
   filters: TaskFilterOptions;
   onFilterChange: (filters: TaskFilterOptions) => void;
 }
