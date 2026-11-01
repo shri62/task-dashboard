@@ -17,16 +17,19 @@ import TaskForm from "../TaskForm/TaskForm";
 import TaskList from "../TaskList/TaskList";
 import TaskFilter from "../TaskFilter/TaskFilter";
 
-// Import dashboard icons
+// Import Heroicons
 import {
   ClipboardDocumentListIcon,
   CheckCircleIcon,
   ClockIcon,
   ArrowPathIcon,
+  SunIcon,
+  MoonIcon,
 } from "@heroicons/react/24/outline";
 
-// Name used to save tasks in localStorage
+// Storage keys
 const STORAGE_KEY = "task-dashboard-tasks";
+const THEME_STORAGE_KEY = "task-dashboard-theme";
 
 // Check whether imported data is a valid task
 function isTask(value: unknown): value is Task {
@@ -51,14 +54,23 @@ function isTask(value: unknown): value is Task {
   );
 }
 
-// Check whether imported data contains valid tasks
+// Validate imported task list
 function isTaskList(value: unknown): value is Task[] {
   return Array.isArray(value) && value.every(isTask);
 }
 
 function Dashboard({ initialTasks = [] }: DashboardProps) {
 
-  // Load saved tasks from localStorage
+  // Store and remember selected theme
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  // Load saved tasks
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const savedTasks = localStorage.getItem(STORAGE_KEY);
@@ -88,6 +100,20 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
 
   // Store the task being edited
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Apply and save selected theme
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+
+    try {
+      localStorage.setItem(
+        THEME_STORAGE_KEY,
+        isDarkMode ? "dark" : "light"
+      );
+    } catch {
+      console.error("Could not save theme preference.");
+    }
+  }, [isDarkMode]);
 
   // Save tasks whenever they change
   useEffect(() => {
@@ -140,7 +166,6 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
       previousTasks.filter((task) => task.id !== taskId)
     );
 
-    // Close the edit form if its task was deleted
     if (editingTask?.id === taskId) {
       setEditingTask(null);
     }
@@ -186,7 +211,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     (task) => task.status === "in-progress"
   ).length;
 
-  // Download tasks as a JSON file
+  // Export tasks to JSON
   const handleExport = () => {
     const file = new Blob(
       [JSON.stringify(tasks, null, 2)],
@@ -194,8 +219,8 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     );
 
     const fileUrl = URL.createObjectURL(file);
-
     const link = document.createElement("a");
+
     link.href = fileUrl;
     link.download = "task-dashboard-tasks.json";
 
@@ -203,11 +228,10 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     link.click();
     link.remove();
 
-    // Release the downloaded file URL
     setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
   };
 
-  // Import tasks from a JSON file
+  // Import tasks from JSON
   const handleImport = async (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -230,7 +254,6 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
       setTasks(importedData);
       setEditingTask(null);
 
-      // Clear old search and filters after importing
       setFilters({
         searchTerm: "",
         status: "all",
@@ -248,172 +271,204 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className={isDarkMode ? "dark" : ""}>
 
-      <div className="mx-auto max-w-7xl space-y-6">
+      <main className="min-h-screen bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-950 sm:p-6 lg:p-8">
 
-        {/* Dashboard heading */}
-        <header>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Task Management Dashboard
-          </h1>
+        <div className="mx-auto max-w-7xl space-y-6">
 
-          <p className="mt-2 text-gray-600">
-            Organize your tasks and track your daily progress.
-          </p>
-        </header>
+          {/* Dashboard heading and theme toggle */}
+          <header className="flex flex-wrap items-center justify-between gap-4">
 
-        {/* Export and import buttons */}
-        <section className="flex flex-wrap gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                Task Management Dashboard
+              </h1>
 
-          <button
-            type="button"
-            onClick={handleExport}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Export Tasks
-          </button>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Organize your tasks and track your daily progress.
+              </p>
+            </div>
 
-          <label className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700">
-            Import Tasks
+            {/* Dark and light mode button */}
+            <button
+              type="button"
+              onClick={() =>
+                setIsDarkMode((previous) => !previous)
+              }
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }
+              aria-pressed={isDarkMode}
+              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
+            >
+              {isDarkMode ? (
+                <>
+                  <SunIcon className="h-5 w-5" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <MoonIcon className="h-5 w-5" />
+                  Dark Mode
+                </>
+              )}
+            </button>
 
-            <input
-              type="file"
-              accept=".json,application/json"
-              onChange={handleImport}
-              className="hidden"
+          </header>
+
+          {/* Export and import buttons */}
+          <section className="flex flex-wrap gap-3">
+
+            <button
+              type="button"
+              onClick={handleExport}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+            >
+              Export Tasks
+            </button>
+
+            <label className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700">
+              Import Tasks
+
+              <input
+                type="file"
+                accept=".json,application/json"
+                onChange={handleImport}
+                className="hidden"
+              />
+            </label>
+
+          </section>
+
+          {/* Task statistics */}
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+
+            {/* Total tasks */}
+            <div className="rounded-xl border border-blue-100 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Total Tasks
+                </p>
+
+                <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-950">
+                  <ClipboardDocumentListIcon className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+
+              <h2 className="mt-4 text-3xl font-bold text-gray-800 dark:text-white">
+                {totalTasks}
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                All your tasks
+              </p>
+            </div>
+
+            {/* Completed tasks */}
+            <div className="rounded-xl border border-green-100 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Completed Tasks
+                </p>
+
+                <div className="rounded-lg bg-green-50 p-2 dark:bg-green-950">
+                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+
+              <h2 className="mt-4 text-3xl font-bold text-green-600">
+                {completedTasks}
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Tasks finished
+              </p>
+            </div>
+
+            {/* Pending tasks */}
+            <div className="rounded-xl border border-orange-100 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Pending Tasks
+                </p>
+
+                <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-950">
+                  <ClockIcon className="h-5 w-5 text-orange-600" />
+                </div>
+              </div>
+
+              <h2 className="mt-4 text-3xl font-bold text-orange-600">
+                {pendingTasks}
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Tasks waiting to start
+              </p>
+            </div>
+
+            {/* In-progress tasks */}
+            <div className="rounded-xl border border-purple-100 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  In Progress
+                </p>
+
+                <div className="rounded-lg bg-purple-50 p-2 dark:bg-purple-950">
+                  <ArrowPathIcon className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+
+              <h2 className="mt-4 text-3xl font-bold text-purple-600">
+                {inProgressTasks}
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Tasks in progress
+              </p>
+            </div>
+
+          </section>
+
+          {/* Add or edit task */}
+          <section>
+            <TaskForm
+              key={editingTask?.id ?? "new-task"}
+              onSubmit={handleTaskSubmit}
+              initialTask={editingTask}
+              onCancel={
+                editingTask
+                  ? () => setEditingTask(null)
+                  : undefined
+              }
             />
-          </label>
+          </section>
 
-        </section>
+          {/* Search and filter tasks */}
+          <section>
+            <TaskFilter
+              tasks={tasks}
+              filters={filters}
+              onFilterChange={setFilters}
+            />
+          </section>
 
-        {/* Task statistics */}
-        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-
-          {/* Total tasks */}
-          <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-500">
-                Total Tasks
-              </p>
-
-              <div className="rounded-xl bg-blue-50 p-2">
-                <ClipboardDocumentListIcon className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-bold text-gray-800">
-              {totalTasks}
+          {/* Display task list */}
+          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">
+              My Tasks
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              All your tasks
-            </p>
-          </div>
+            <TaskList
+              tasks={filteredTasks}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
+          </section>
 
-          {/* Completed tasks */}
-          <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-500">
-                Completed Tasks
-              </p>
-
-              <div className="rounded-xl bg-green-50 p-2">
-                <CheckCircleIcon className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-bold text-green-600">
-              {completedTasks}
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Tasks finished
-            </p>
-          </div>
-
-          {/* Pending tasks */}
-          <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-500">
-                Pending Tasks
-              </p>
-
-              <div className="rounded-xl bg-orange-50 p-2">
-                <ClockIcon className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-bold text-orange-600">
-              {pendingTasks}
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Tasks waiting to start
-            </p>
-          </div>
-
-          {/* In-progress tasks */}
-          <div className="rounded-2xl border border-purple-100 bg-white p-5 shadow-sm transition hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-500">
-                In Progress
-              </p>
-
-              <div className="rounded-xl bg-purple-50 p-2">
-                <ArrowPathIcon className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-
-            <h2 className="mt-4 text-3xl font-bold text-purple-600">
-              {inProgressTasks}
-            </h2>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Tasks in progress
-            </p>
-          </div>
-
-        </section>
-
-        {/* Add or edit task */}
-        <section>
-          <TaskForm
-            key={editingTask?.id ?? "new-task"}
-            onSubmit={handleTaskSubmit}
-            initialTask={editingTask}
-            onCancel={
-              editingTask
-                ? () => setEditingTask(null)
-                : undefined
-            }
-          />
-        </section>
-
-        {/* Search and filter tasks */}
-        <section>
-          <TaskFilter
-            tasks={tasks}
-            filters={filters}
-            onFilterChange={setFilters}
-          />
-        </section>
-
-        {/* Display task list */}
-        <section className="rounded-2xl border bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-xl font-bold text-gray-800">
-            My Tasks
-          </h2>
-
-          <TaskList
-            tasks={filteredTasks}
-            onStatusChange={handleStatusChange}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-          />
-        </section>
-
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

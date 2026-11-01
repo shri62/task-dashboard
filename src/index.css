@@ -55,3 +55,76 @@ img,
 svg {
   max-width: 100%;
 }
+
+/* =====================================
+   DARK MODE - TASK DASHBOARD
+===================================== */
+
+/* Main page */
+html.dark,
+html.dark body,
+html.dark #root {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+/* Dashboard background */
+html.dark main {
+  background-color: #111827 !important;
+  color: #f9fafb;
+}
+
+/* White cards become dark */
+html.dark main .bg-white {
+  background-color: #1f2937 !important;
+}
+
+/* Light gray backgrounds become dark */
+html.dark main .bg-gray-100,
+html.dark main .bg-gray-50 {
+  background-color: #111827 !important;
+}
+
+/* Headings */
+html.dark main h1,
+html.dark main h2,
+html.dark main h3 {
+  color: #f9fafb !important;
+}
+
+/* Paragraphs and labels */
+html.dark main .text-gray-800,
+html.dark main .text-gray-700,
+html.dark main .text-gray-600,
+html.dark main .text-gray-500 {
+  color: #d1d5db !important;
+}
+
+/* Borders */
+html.dark main .border {
+  border-color: #374151;
+}
+
+/* Input fields, dropdowns and text areas */
+html.dark main input,
+html.dark main select,
+html.dark main textarea {
+  background-color: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+/* Input placeholder */
+html.dark main input::placeholder,
+html.dark main textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Smooth color transitions */
+html.dark main,
+html.dark main .bg-white,
+html.dark main input,
+html.dark main select,
+html.dark main textarea {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
