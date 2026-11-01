@@ -1,13 +1,25 @@
 
 // Task status options
-export type TaskStatus = "pending" | "in-progress" | "completed";
+export type TaskStatus =
+  | "pending"
+  | "in-progress"
+  | "completed";
 
 // Task priority options
-export type TaskPriority = "low" | "medium" | "high";
+export type TaskPriority =
+  | "low"
+  | "medium"
+  | "high";
 
 // Sorting options
-export type TaskSortOption = "title" | "dueDate" | "createdAt" | "priority";
+export type TaskSortOption =
+  | "title"
+  | "dueDate"
+  | "createdAt"
+  | "priority"
+  | "manual";
 
+// Sorting direction
 export type SortDirection = "asc" | "desc";
 
 // Form data for adding or editing a task
@@ -48,6 +60,10 @@ export interface TaskListProps {
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
+
+  // Drag-and-drop functionality
+  onReorder: (reorderedTasks: Task[]) => void;
+  canReorder: boolean;
 }
 
 // TaskForm component props
@@ -57,8 +73,7 @@ export interface TaskFormProps {
   onCancel?: () => void;
 }
 
-
-// Props for the TaskFilter component
+// TaskFilter component props
 export interface TaskFilterProps {
   tasks: Task[];
   filters: TaskFilterOptions;

@@ -176,6 +176,17 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     setEditingTask(task);
   };
 
+  // Update task order after drag and drop
+const handleReorder = (reorderedTasks: Task[]) => {
+  setTasks(reorderedTasks);
+};
+
+// Allow dragging only when no filters are active
+const canReorder =
+  filters.searchTerm.trim() === "" &&
+  filters.status === "all" &&
+  filters.priority === "all";
+
   // Filter tasks by search, status, and priority
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -460,11 +471,13 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
             </h2>
 
             <TaskList
-              tasks={filteredTasks}
-              onStatusChange={handleStatusChange}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-            />
+  tasks={filteredTasks}
+  onStatusChange={handleStatusChange}
+  onDelete={handleDelete}
+  onEdit={handleEdit}
+  onReorder={handleReorder}
+  canReorder={canReorder}
+/>
           </section>
 
         </div>

@@ -2,8 +2,36 @@
 // Import React hooks
 import { useMemo, useState } from "react";
 
+// Import drag-and-drop tools
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+
+import type { DragEndEvent } from "@dnd-kit/core";
+
+// Import sortable tools
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
+// Import CSS transform helper
+import { CSS } from "@dnd-kit/utilities";
+
+// Import drag handle icon
+import { Bars3Icon } from "@heroicons/react/24/outline";
+
 // Import TypeScript types
 import type {
+  Task,
   TaskListProps,
   TaskSortOption,
   SortDirection,
@@ -13,11 +41,92 @@ import type {
 // Import TaskItem component
 import TaskItem from "./TaskItem";
 
+// Props for an individual sortable task
+type SortableTaskProps = {
+  task: Task;
+  canReorder: boolean;
+  onStatusChange: TaskListProps["onStatusChange"];
+  onDelete: TaskListProps["onDelete"];
+  onEdit: TaskListProps["onEdit"];
+};
+
+// Component that makes one task draggable
+function SortableTask({
+  task,
+  canReorder,
+  onStatusChange,
+  onDelete,
+  onEdit,
+}: SortableTaskProps) {
+
+  // Get drag-and-drop properties
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    disabled: !canReorder,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+      }}
+      className="flex items-center gap-2"
+    >
+
+      {/* Drag handle */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        disabled={!canReorder}
+        aria-label={`Drag ${task.title} to reorder`}
+        title={
+          canReorder
+            ? "Drag to reorder"
+            : "Select Manual Order and clear filters to reorder"
+        }
+        className={`shrink-0 rounded-md p-2 ${
+          canReorder
+            ? "cursor-grab text-gray-500 hover:bg-gray-100 active:cursor-grabbing dark:text-gray-300 dark:hover:bg-gray-700"
+            : "cursor-not-allowed text-gray-300 dark:text-gray-600"
+        }`}
+      >
+        <Bars3Icon className="h-5 w-5" />
+      </button>
+
+      {/* Task card */}
+      <div className="min-w-0 flex-1">
+        <TaskItem
+          task={task}
+          onStatusChange={onStatusChange}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
+      </div>
+
+    </div>
+  );
+}
+
 function TaskList({
   tasks,
   onStatusChange,
   onDelete,
   onEdit,
+  onReorder,
+  canReorder,
 }: TaskListProps) {
 
   // Store sorting option
@@ -28,8 +137,26 @@ function TaskList({
   const [sortDirection, setSortDirection] =
     useState<SortDirection>("desc");
 
-  // Sort the tasks
+  // Configure mouse and keyboard dragging
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sort tasks
   const sortedTasks = useMemo(() => {
+
+    // Manual mode preserves the current task order
+    if (sortBy === "manual") {
+      return [...tasks];
+    }
 
     // Assign numbers to priorities
     const priorityOrder: Record<TaskPriority, number> = {
@@ -38,7 +165,6 @@ function TaskList({
       high: 3,
     };
 
-    // Copy tasks before sorting
     return [...tasks].sort((a, b) => {
 
       let comparison = 0;
@@ -70,6 +196,45 @@ function TaskList({
 
   }, [tasks, sortBy, sortDirection]);
 
+  // Allow dragging only in manual mode with no active filters
+  const dragEnabled =
+    canReorder && sortBy === "manual";
+
+  // Handle the end of a drag operation
+  const handleDragEnd = (event: DragEndEvent) => {
+
+    const { active, over } = event;
+
+    // Do nothing if the item was not moved
+    if (!over || active.id === over.id || !dragEnabled) {
+      return;
+    }
+
+    // Find the old and new positions
+    const oldIndex = sortedTasks.findIndex(
+      (task) => task.id === String(active.id)
+    );
+
+    const newIndex = sortedTasks.findIndex(
+      (task) => task.id === String(over.id)
+    );
+
+    // Check whether both tasks exist
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Create the new task order
+    const reorderedTasks = arrayMove(
+      sortedTasks,
+      oldIndex,
+      newIndex
+    );
+
+    // Send the new order to Dashboard
+    onReorder(reorderedTasks);
+  };
+
   return (
     <div className="space-y-4">
 
@@ -81,13 +246,14 @@ function TaskList({
           onChange={(event) =>
             setSortBy(event.target.value as TaskSortOption)
           }
-          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300"
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           aria-label="Sort tasks by"
         >
           <option value="createdAt">Date Created</option>
           <option value="title">Title</option>
           <option value="dueDate">Due Date</option>
           <option value="priority">Priority</option>
+          <option value="manual">Manual Order (Drag & Drop)</option>
         </select>
 
         <select
@@ -95,7 +261,8 @@ function TaskList({
           onChange={(event) =>
             setSortDirection(event.target.value as SortDirection)
           }
-          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300"
+          disabled={sortBy === "manual"}
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           aria-label="Sort direction"
         >
           <option value="asc">Ascending</option>
@@ -104,31 +271,56 @@ function TaskList({
 
       </div>
 
+      {/* Reordering instructions */}
+      {sortBy === "manual" && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {canReorder
+            ? "Drag the handle beside a task to change its position."
+            : "Clear all search and filters to enable task reordering."}
+        </p>
+      )}
+
       {/* Display task list */}
       {sortedTasks.length === 0 ? (
 
-        <p className="rounded-lg bg-gray-50 p-6 text-center text-sm text-gray-500">
+        <p className="rounded-lg bg-gray-50 p-6 text-center text-sm text-gray-500 dark:bg-gray-700 dark:text-gray-300">
           No tasks found. Add a task or change your filters.
         </p>
 
       ) : (
 
-        <ul className="space-y-3">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
 
-          {sortedTasks.map((task) => (
+          <SortableContext
+            items={sortedTasks.map((task) => task.id)}
+            strategy={verticalListSortingStrategy}
+          >
 
-            <li key={task.id}>
-              <TaskItem
-                task={task}
-                onStatusChange={onStatusChange}
-                onDelete={onDelete}
-                onEdit={onEdit}
-              />
-            </li>
+            <ul className="space-y-3">
 
-          ))}
+              {sortedTasks.map((task) => (
 
-        </ul>
+                <li key={task.id}>
+                  <SortableTask
+                    task={task}
+                    canReorder={dragEnabled}
+                    onStatusChange={onStatusChange}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                  />
+                </li>
+
+              ))}
+
+            </ul>
+
+          </SortableContext>
+
+        </DndContext>
 
       )}
 
