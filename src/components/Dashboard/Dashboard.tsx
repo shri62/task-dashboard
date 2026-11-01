@@ -17,6 +17,14 @@ import TaskForm from "../TaskForm/TaskForm";
 import TaskList from "../TaskList/TaskList";
 import TaskFilter from "../TaskFilter/TaskFilter";
 
+// Import dashboard icons
+import {
+  ClipboardDocumentListIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+
 // Name used to save tasks in localStorage
 const STORAGE_KEY = "task-dashboard-tasks";
 
@@ -43,7 +51,7 @@ function isTask(value: unknown): value is Task {
   );
 }
 
-// Check whether the imported data contains valid tasks
+// Check whether imported data contains valid tasks
 function isTaskList(value: unknown): value is Task[] {
   return Array.isArray(value) && value.every(isTask);
 }
@@ -131,6 +139,11 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     setTasks((previousTasks) =>
       previousTasks.filter((task) => task.id !== taskId)
     );
+
+    // Close the edit form if its task was deleted
+    if (editingTask?.id === taskId) {
+      setEditingTask(null);
+    }
   };
 
   // Select a task for editing
@@ -144,7 +157,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
       const searchMatch =
         `${task.title} ${task.description}`
           .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase());
+          .includes(filters.searchTerm.trim().toLowerCase());
 
       const statusMatch =
         filters.status === "all" ||
@@ -190,7 +203,8 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     link.click();
     link.remove();
 
-    URL.revokeObjectURL(fileUrl);
+    // Release the downloaded file URL
+    setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
   };
 
   // Import tasks from a JSON file
@@ -216,6 +230,15 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
       setTasks(importedData);
       setEditingTask(null);
 
+      // Clear old search and filters after importing
+      setFilters({
+        searchTerm: "",
+        status: "all",
+        priority: "all",
+        sortBy: "createdAt",
+        sortDirection: "desc",
+      });
+
       window.alert("Tasks imported successfully!");
     } catch {
       window.alert("Could not import the file. Please check the JSON file.");
@@ -226,6 +249,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
+
       <div className="mx-auto max-w-7xl space-y-6">
 
         {/* Dashboard heading */}
@@ -241,6 +265,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
 
         {/* Export and import buttons */}
         <section className="flex flex-wrap gap-3">
+
           <button
             type="button"
             onClick={handleExport}
@@ -259,37 +284,94 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
               className="hidden"
             />
           </label>
+
         </section>
 
         {/* Task statistics */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">Total Tasks</p>
-            <h2 className="mt-2 text-3xl font-bold text-blue-600">
+          {/* Total tasks */}
+          <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-500">
+                Total Tasks
+              </p>
+
+              <div className="rounded-xl bg-blue-50 p-2">
+                <ClipboardDocumentListIcon className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold text-gray-800">
               {totalTasks}
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              All your tasks
+            </p>
           </div>
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">Completed Tasks</p>
-            <h2 className="mt-2 text-3xl font-bold text-green-600">
+          {/* Completed tasks */}
+          <div className="rounded-2xl border border-green-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-500">
+                Completed Tasks
+              </p>
+
+              <div className="rounded-xl bg-green-50 p-2">
+                <CheckCircleIcon className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold text-green-600">
               {completedTasks}
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Tasks finished
+            </p>
           </div>
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">Pending Tasks</p>
-            <h2 className="mt-2 text-3xl font-bold text-orange-500">
+          {/* Pending tasks */}
+          <div className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-500">
+                Pending Tasks
+              </p>
+
+              <div className="rounded-xl bg-orange-50 p-2">
+                <ClockIcon className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold text-orange-600">
               {pendingTasks}
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Tasks waiting to start
+            </p>
           </div>
 
-          <div className="rounded-lg bg-white p-5 shadow">
-            <p className="text-sm text-gray-500">In Progress</p>
-            <h2 className="mt-2 text-3xl font-bold text-purple-600">
+          {/* In-progress tasks */}
+          <div className="rounded-2xl border border-purple-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-500">
+                In Progress
+              </p>
+
+              <div className="rounded-xl bg-purple-50 p-2">
+                <ArrowPathIcon className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+
+            <h2 className="mt-4 text-3xl font-bold text-purple-600">
               {inProgressTasks}
             </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              Tasks in progress
+            </p>
           </div>
 
         </section>
@@ -311,14 +393,14 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
         {/* Search and filter tasks */}
         <section>
           <TaskFilter
-  tasks={tasks}
-  filters={filters}
-  onFilterChange={setFilters}
-/>
+            tasks={tasks}
+            filters={filters}
+            onFilterChange={setFilters}
+          />
         </section>
 
         {/* Display task list */}
-        <section className="rounded-lg bg-white p-5 shadow">
+        <section className="rounded-2xl border bg-white p-5 shadow-sm">
           <h2 className="mb-4 text-xl font-bold text-gray-800">
             My Tasks
           </h2>

@@ -1,5 +1,8 @@
 
+// Import React hooks
 import { useMemo, useState } from "react";
+
+// Import TypeScript types
 import type {
   TaskListProps,
   TaskSortOption,
@@ -7,6 +10,7 @@ import type {
   TaskPriority,
 } from "../../types";
 
+// Import TaskItem component
 import TaskItem from "./TaskItem";
 
 function TaskList({
@@ -16,31 +20,27 @@ function TaskList({
   onEdit,
 }: TaskListProps) {
 
-  // Store the search text
-  const [searchTerm, setSearchTerm] = useState("");
+  // Store sorting option
+  const [sortBy, setSortBy] =
+    useState<TaskSortOption>("createdAt");
 
-  // Store the sorting option
-  const [sortBy, setSortBy] = useState<TaskSortOption>("createdAt");
-
-  // Store the sorting direction
+  // Store sorting direction
   const [sortDirection, setSortDirection] =
     useState<SortDirection>("desc");
 
-  // Search and sort tasks
-  const filteredAndSortedTasks = useMemo(() => {
-    const filteredTasks = tasks.filter((task) =>
-      `${task.title} ${task.description}`
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
+  // Sort the tasks
+  const sortedTasks = useMemo(() => {
 
+    // Assign numbers to priorities
     const priorityOrder: Record<TaskPriority, number> = {
       low: 1,
       medium: 2,
       high: 3,
     };
 
-    return [...filteredTasks].sort((a, b) => {
+    // Copy tasks before sorting
+    return [...tasks].sort((a, b) => {
+
       let comparison = 0;
 
       switch (sortBy) {
@@ -58,7 +58,8 @@ function TaskList({
 
         case "priority":
           comparison =
-            priorityOrder[a.priority] - priorityOrder[b.priority];
+            priorityOrder[a.priority] -
+            priorityOrder[b.priority];
           break;
       }
 
@@ -66,30 +67,22 @@ function TaskList({
         ? comparison
         : -comparison;
     });
-  }, [tasks, searchTerm, sortBy, sortDirection]);
+
+  }, [tasks, sortBy, sortDirection]);
 
   return (
     <div className="space-y-4">
 
-      {/* Search and sorting controls */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/* Sorting controls */}
+      <div className="flex flex-wrap items-center gap-3">
 
-        {/* Search bar */}
-        <input
-          type="search"
-          placeholder="Search tasks..."
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          className="flex-1 rounded-lg border p-3"
-        />
-
-        {/* Sort options */}
         <select
           value={sortBy}
           onChange={(event) =>
             setSortBy(event.target.value as TaskSortOption)
           }
-          className="rounded-lg border p-3"
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300"
+          aria-label="Sort tasks by"
         >
           <option value="createdAt">Date Created</option>
           <option value="title">Title</option>
@@ -97,13 +90,13 @@ function TaskList({
           <option value="priority">Priority</option>
         </select>
 
-        {/* Sort direction */}
         <select
           value={sortDirection}
           onChange={(event) =>
             setSortDirection(event.target.value as SortDirection)
           }
-          className="rounded-lg border p-3"
+          className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-300"
+          aria-label="Sort direction"
         >
           <option value="asc">Ascending</option>
           <option value="desc">Descending</option>
@@ -112,13 +105,18 @@ function TaskList({
       </div>
 
       {/* Display task list */}
-      {filteredAndSortedTasks.length === 0 ? (
-        <p className="rounded-lg bg-gray-100 p-6 text-center text-gray-500">
-          No tasks found.
+      {sortedTasks.length === 0 ? (
+
+        <p className="rounded-lg bg-gray-50 p-6 text-center text-sm text-gray-500">
+          No tasks found. Add a task or change your filters.
         </p>
+
       ) : (
+
         <ul className="space-y-3">
-          {filteredAndSortedTasks.map((task) => (
+
+          {sortedTasks.map((task) => (
+
             <li key={task.id}>
               <TaskItem
                 task={task}
@@ -127,8 +125,11 @@ function TaskList({
                 onEdit={onEdit}
               />
             </li>
+
           ))}
+
         </ul>
+
       )}
 
     </div>
