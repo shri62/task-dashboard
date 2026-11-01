@@ -44,22 +44,23 @@ import TaskItem from "./TaskItem";
 // Props for an individual sortable task
 type SortableTaskProps = {
   task: Task;
+  isDarkMode: boolean;
   canReorder: boolean;
   onStatusChange: TaskListProps["onStatusChange"];
   onDelete: TaskListProps["onDelete"];
   onEdit: TaskListProps["onEdit"];
 };
 
-// Component that makes one task draggable
+// Make an individual task draggable
 function SortableTask({
   task,
+  isDarkMode,
   canReorder,
   onStatusChange,
   onDelete,
   onEdit,
 }: SortableTaskProps) {
 
-  // Get drag-and-drop properties
   const {
     attributes,
     listeners,
@@ -106,10 +107,11 @@ function SortableTask({
         <Bars3Icon className="h-5 w-5" />
       </button>
 
-      {/* Task card */}
+      {/* Display task card */}
       <div className="min-w-0 flex-1">
         <TaskItem
           task={task}
+          isDarkMode={isDarkMode}
           onStatusChange={onStatusChange}
           onDelete={onDelete}
           onEdit={onEdit}
@@ -122,6 +124,7 @@ function SortableTask({
 
 function TaskList({
   tasks,
+  isDarkMode,
   onStatusChange,
   onDelete,
   onEdit,
@@ -144,7 +147,6 @@ function TaskList({
         distance: 8,
       },
     }),
-
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -153,12 +155,11 @@ function TaskList({
   // Sort tasks
   const sortedTasks = useMemo(() => {
 
-    // Manual mode preserves the current task order
+    // Manual mode keeps the current task order
     if (sortBy === "manual") {
       return [...tasks];
     }
 
-    // Assign numbers to priorities
     const priorityOrder: Record<TaskPriority, number> = {
       low: 1,
       medium: 2,
@@ -166,7 +167,6 @@ function TaskList({
     };
 
     return [...tasks].sort((a, b) => {
-
       let comparison = 0;
 
       switch (sortBy) {
@@ -193,24 +193,20 @@ function TaskList({
         ? comparison
         : -comparison;
     });
-
   }, [tasks, sortBy, sortDirection]);
 
-  // Allow dragging only in manual mode with no active filters
+  // Enable dragging only in manual mode without filters
   const dragEnabled =
     canReorder && sortBy === "manual";
 
-  // Handle the end of a drag operation
+  // Handle the end of dragging
   const handleDragEnd = (event: DragEndEvent) => {
-
     const { active, over } = event;
 
-    // Do nothing if the item was not moved
     if (!over || active.id === over.id || !dragEnabled) {
       return;
     }
 
-    // Find the old and new positions
     const oldIndex = sortedTasks.findIndex(
       (task) => task.id === String(active.id)
     );
@@ -219,7 +215,6 @@ function TaskList({
       (task) => task.id === String(over.id)
     );
 
-    // Check whether both tasks exist
     if (oldIndex === -1 || newIndex === -1) {
       return;
     }
@@ -231,7 +226,7 @@ function TaskList({
       newIndex
     );
 
-    // Send the new order to Dashboard
+    // Send new order to Dashboard
     onReorder(reorderedTasks);
   };
 
@@ -280,48 +275,37 @@ function TaskList({
         </p>
       )}
 
-      {/* Display task list */}
+      {/* Display tasks */}
       {sortedTasks.length === 0 ? (
-
         <p className="rounded-lg bg-gray-50 p-6 text-center text-sm text-gray-500 dark:bg-gray-700 dark:text-gray-300">
           No tasks found. Add a task or change your filters.
         </p>
-
       ) : (
-
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-
           <SortableContext
             items={sortedTasks.map((task) => task.id)}
             strategy={verticalListSortingStrategy}
           >
-
             <ul className="space-y-3">
-
               {sortedTasks.map((task) => (
-
                 <li key={task.id}>
                   <SortableTask
                     task={task}
+                    isDarkMode={isDarkMode}
                     canReorder={dragEnabled}
                     onStatusChange={onStatusChange}
                     onDelete={onDelete}
                     onEdit={onEdit}
                   />
                 </li>
-
               ))}
-
             </ul>
-
           </SortableContext>
-
         </DndContext>
-
       )}
 
     </div>

@@ -444,6 +444,7 @@ const canReorder =
           {/* Add or edit task */}
           <section>
             <TaskForm
+            isDarkMode={isDarkMode}
               key={editingTask?.id ?? "new-task"}
               onSubmit={handleTaskSubmit}
               initialTask={editingTask}
@@ -459,6 +460,7 @@ const canReorder =
           <section>
             <TaskFilter
               tasks={tasks}
+              isDarkMode={isDarkMode}
               filters={filters}
               onFilterChange={setFilters}
             />
@@ -472,6 +474,7 @@ const canReorder =
 
             <TaskList
   tasks={filteredTasks}
+  isDarkMode={isDarkMode}
   onStatusChange={handleStatusChange}
   onDelete={handleDelete}
   onEdit={handleEdit}

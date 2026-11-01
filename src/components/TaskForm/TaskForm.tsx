@@ -18,13 +18,31 @@ const emptyForm: TaskFormData = {
   dueDate: "",
 };
 
-function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
+function TaskForm({
+  isDarkMode,
+  onSubmit,
+  initialTask,
+  onCancel,
+}: TaskFormProps) {
 
   // Store form data
   const [formData, setFormData] = useState<TaskFormData>(emptyForm);
 
   // Store error messages
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Styles based on selected theme
+  const formStyle = isDarkMode
+    ? "border-gray-700 bg-gray-800 text-white"
+    : "border-gray-200 bg-white text-gray-800";
+
+  const labelStyle = isDarkMode
+    ? "text-gray-200"
+    : "text-gray-700";
+
+  const inputStyle = isDarkMode
+    ? "border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:ring-blue-500"
+    : "border-gray-300 bg-white text-gray-800 placeholder-gray-400 focus:ring-blue-500";
 
   // Load existing task when editing
   useEffect(() => {
@@ -94,30 +112,40 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="space-y-4 rounded-lg border bg-white p-5 shadow-sm"
+      className={`space-y-4 rounded-xl border p-5 shadow-sm transition-colors duration-300 ${formStyle}`}
     >
-      <h2 className="text-xl font-bold text-gray-800">
+      {/* Form heading */}
+      <h2 className={`text-xl font-bold ${labelStyle}`}>
         {initialTask ? "Edit Task" : "Add New Task"}
       </h2>
 
       {/* Task title */}
       <div>
-        <label className="mb-1 block font-medium">
+        <label
+          htmlFor="task-title"
+          className={`mb-1 block text-sm font-medium ${labelStyle}`}
+        >
           Task Title
         </label>
 
         <input
+          id="task-title"
           type="text"
           value={formData.title}
           onChange={(event) =>
             handleChange("title", event.target.value)
           }
           placeholder="Enter task title"
-          className="w-full rounded-lg border p-3"
+          aria-invalid={Boolean(errors.title)}
+          aria-describedby={errors.title ? "title-error" : undefined}
+          className={`w-full rounded-lg border p-3 text-sm outline-none transition focus:ring-2 ${inputStyle}`}
         />
 
         {errors.title && (
-          <p className="mt-1 text-sm text-red-600">
+          <p
+            id="title-error"
+            className="mt-1 text-sm text-red-500"
+          >
             {errors.title}
           </p>
         )}
@@ -125,22 +153,33 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
 
       {/* Task description */}
       <div>
-        <label className="mb-1 block font-medium">
+        <label
+          htmlFor="task-description"
+          className={`mb-1 block text-sm font-medium ${labelStyle}`}
+        >
           Description
         </label>
 
         <textarea
+          id="task-description"
           value={formData.description}
           onChange={(event) =>
             handleChange("description", event.target.value)
           }
           placeholder="Enter task description"
           rows={3}
-          className="w-full rounded-lg border p-3"
+          aria-invalid={Boolean(errors.description)}
+          aria-describedby={
+            errors.description ? "description-error" : undefined
+          }
+          className={`w-full resize-y rounded-lg border p-3 text-sm outline-none transition focus:ring-2 ${inputStyle}`}
         />
 
         {errors.description && (
-          <p className="mt-1 text-sm text-red-600">
+          <p
+            id="description-error"
+            className="mt-1 text-sm text-red-500"
+          >
             {errors.description}
           </p>
         )}
@@ -148,11 +187,15 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
 
       {/* Task priority */}
       <div>
-        <label className="mb-1 block font-medium">
+        <label
+          htmlFor="task-priority"
+          className={`mb-1 block text-sm font-medium ${labelStyle}`}
+        >
           Priority
         </label>
 
         <select
+          id="task-priority"
           value={formData.priority}
           onChange={(event) =>
             handleChange(
@@ -160,7 +203,7 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
               event.target.value as TaskPriority
             )
           }
-          className="w-full rounded-lg border p-3"
+          className={`w-full rounded-lg border p-3 text-sm outline-none focus:ring-2 ${inputStyle}`}
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -170,25 +213,30 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
 
       {/* Task due date */}
       <div>
-        <label className="mb-1 block font-medium">
+        <label
+          htmlFor="task-due-date"
+          className={`mb-1 block text-sm font-medium ${labelStyle}`}
+        >
           Due Date
         </label>
 
         <input
+          id="task-due-date"
           type="date"
           value={formData.dueDate}
           onChange={(event) =>
             handleChange("dueDate", event.target.value)
           }
-          className="w-full rounded-lg border p-3"
+          className={`w-full rounded-lg border p-3 text-sm outline-none focus:ring-2 ${inputStyle}`}
         />
       </div>
 
       {/* Form buttons */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
+
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
           {initialTask ? "Update Task" : "Add Task"}
         </button>
@@ -197,11 +245,16 @@ function TaskForm({ onSubmit, initialTask, onCancel }: TaskFormProps) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300"
+            className={
+              isDarkMode
+                ? "rounded-lg bg-gray-700 px-5 py-2.5 text-sm font-medium text-gray-200 transition hover:bg-gray-600"
+                : "rounded-lg bg-gray-200 px-5 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-300"
+            }
           >
             Cancel
           </button>
         )}
+
       </div>
     </form>
   );

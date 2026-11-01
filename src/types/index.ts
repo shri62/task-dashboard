@@ -49,6 +49,7 @@ export interface TaskFilterOptions {
 // TaskItem component props
 export interface TaskItemProps {
   task: Task;
+  isDarkMode: boolean;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
@@ -57,17 +58,17 @@ export interface TaskItemProps {
 // TaskList component props
 export interface TaskListProps {
   tasks: Task[];
+  isDarkMode: boolean;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
-
-  // Drag-and-drop functionality
   onReorder: (reorderedTasks: Task[]) => void;
   canReorder: boolean;
 }
 
 // TaskForm component props
 export interface TaskFormProps {
+  isDarkMode: boolean;
   onSubmit: (formData: TaskFormData) => void;
   initialTask?: Task | null;
   onCancel?: () => void;
@@ -76,6 +77,7 @@ export interface TaskFormProps {
 // TaskFilter component props
 export interface TaskFilterProps {
   tasks: Task[];
+  isDarkMode: boolean;
   filters: TaskFilterOptions;
   onFilterChange: (filters: TaskFilterOptions) => void;
 }

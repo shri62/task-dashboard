@@ -29,21 +29,42 @@ const priorityStyles: Record<TaskPriority, string> = {
 
 function TaskItem({
   task,
+  isDarkMode,
   onStatusChange,
   onDelete,
   onEdit,
 }: TaskItemProps) {
+
+  // Choose the task card colors based on the selected theme
+  const cardStyle = isDarkMode
+    ? "border-gray-700 bg-gray-800 text-white"
+    : "border-gray-200 bg-white text-gray-800";
+
+  const descriptionStyle = isDarkMode
+    ? "text-gray-300"
+    : "text-gray-600";
+
+  const dateStyle = isDarkMode
+    ? "text-gray-400"
+    : "text-gray-500";
+
+  const buttonBase = isDarkMode
+    ? "border-gray-600 hover:bg-gray-700"
+    : "border-gray-200 hover:bg-gray-50";
+
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={`flex flex-col gap-4 rounded-lg border p-4 shadow-sm transition-all duration-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between ${cardStyle}`}
+    >
 
       {/* Task information */}
       <div className="min-w-0 flex-1 space-y-2">
 
-        <h3 className="text-base font-semibold text-gray-800">
+        <h3 className="text-base font-semibold">
           {task.title}
         </h3>
 
-        <p className="text-sm text-gray-600">
+        <p className={`text-sm ${descriptionStyle}`}>
           {task.description}
         </p>
 
@@ -56,8 +77,8 @@ function TaskItem({
             Priority: {task.priority}
           </span>
 
-          <span className="flex items-center gap-1 text-xs text-gray-500">
-            <CalendarDaysIcon className="h-4 w-4" />
+          <span className={`flex items-center gap-1 text-xs ${dateStyle}`}>
+            <CalendarDaysIcon className="h-4 w-4 shrink-0" />
             Due: {task.dueDate || "No due date"}
           </span>
 
@@ -89,7 +110,7 @@ function TaskItem({
           type="button"
           onClick={() => onEdit(task)}
           aria-label={`Edit ${task.title}`}
-          className="flex items-center gap-1 rounded-md border border-blue-200 px-3 py-2 text-sm text-blue-600 transition hover:bg-blue-50"
+          className={`flex items-center gap-1 rounded-md border px-3 py-2 text-sm text-blue-600 transition ${buttonBase}`}
         >
           <PencilSquareIcon className="h-4 w-4" />
           Edit
@@ -100,7 +121,7 @@ function TaskItem({
           type="button"
           onClick={() => onDelete(task.id)}
           aria-label={`Delete ${task.title}`}
-          className="flex items-center gap-1 rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
+          className={`flex items-center gap-1 rounded-md border px-3 py-2 text-sm text-red-600 transition ${buttonBase}`}
         >
           <TrashIcon className="h-4 w-4" />
           Delete
