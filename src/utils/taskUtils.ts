@@ -5,6 +5,8 @@ import type {
   TaskFormData,
   TaskFilterOptions,
   TaskPriority,
+  TaskSortOption,
+  SortDirection,
 } from "../types";
 
 // Filter tasks by search, status, and priority
@@ -33,9 +35,14 @@ export function filterTasks(
 // Sort tasks by title, date, or priority
 export function sortTasks(
   tasks: Task[],
-  sortBy: TaskFilterOptions["sortBy"],
-  direction: TaskFilterOptions["sortDirection"]
+  sortBy: TaskSortOption,
+  direction: SortDirection
 ): Task[] {
+
+  // Manual sorting preserves the existing task order
+  if (sortBy === "manual") {
+    return [...tasks];
+  }
 
   const priorityOrder: Record<TaskPriority, number> = {
     low: 1,

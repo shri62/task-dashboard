@@ -27,6 +27,9 @@ import {
   MoonIcon,
 } from "@heroicons/react/24/outline";
 
+// Import reusable task utility functions
+import { filterTasks } from "../../utils/taskUtils";
+
 // Storage keys
 const STORAGE_KEY = "task-dashboard-tasks";
 const THEME_STORAGE_KEY = "task-dashboard-theme";
@@ -54,7 +57,7 @@ function isTask(value: unknown): value is Task {
   );
 }
 
-// Validate imported task list
+// Check whether imported data contains valid tasks
 function isTaskList(value: unknown): value is Task[] {
   return Array.isArray(value) && value.every(isTask);
 }
@@ -70,7 +73,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
     }
   });
 
-  // Load saved tasks
+  // Load saved tasks from localStorage
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const savedTasks = localStorage.getItem(STORAGE_KEY);
@@ -166,6 +169,7 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
       previousTasks.filter((task) => task.id !== taskId)
     );
 
+    // Close the edit form if its task was deleted
     if (editingTask?.id === taskId) {
       setEditingTask(null);
     }
@@ -177,35 +181,21 @@ function Dashboard({ initialTasks = [] }: DashboardProps) {
   };
 
   // Update task order after drag and drop
-const handleReorder = (reorderedTasks: Task[]) => {
-  setTasks(reorderedTasks);
-};
+  const handleReorder = (reorderedTasks: Task[]) => {
+    setTasks(reorderedTasks);
+  };
 
-// Allow dragging only when no filters are active
-const canReorder =
-  filters.searchTerm.trim() === "" &&
-  filters.status === "all" &&
-  filters.priority === "all";
+  // Allow dragging only when no filters are active
+  const canReorder =
+    filters.searchTerm.trim() === "" &&
+    filters.status === "all" &&
+    filters.priority === "all";
 
-  // Filter tasks by search, status, and priority
-  const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      const searchMatch =
-        `${task.title} ${task.description}`
-          .toLowerCase()
-          .includes(filters.searchTerm.trim().toLowerCase());
-
-      const statusMatch =
-        filters.status === "all" ||
-        task.status === filters.status;
-
-      const priorityMatch =
-        filters.priority === "all" ||
-        task.priority === filters.priority;
-
-      return searchMatch && statusMatch && priorityMatch;
-    });
-  }, [tasks, filters]);
+  // Filter tasks using the reusable utility function
+  const filteredTasks = useMemo(
+    () => filterTasks(tasks, filters),
+    [tasks, filters]
+  );
 
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -222,7 +212,7 @@ const canReorder =
     (task) => task.status === "in-progress"
   ).length;
 
-  // Export tasks to JSON
+  // Download tasks as a JSON file
   const handleExport = () => {
     const file = new Blob(
       [JSON.stringify(tasks, null, 2)],
@@ -239,10 +229,11 @@ const canReorder =
     link.click();
     link.remove();
 
+    // Release the downloaded file URL
     setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
   };
 
-  // Import tasks from JSON
+  // Import tasks from a JSON file
   const handleImport = async (
     event: ChangeEvent<HTMLInputElement>
   ) => {
@@ -258,13 +249,16 @@ const canReorder =
       const importedData: unknown = JSON.parse(fileContent);
 
       if (!isTaskList(importedData)) {
-        window.alert("Invalid task file. Please select a valid JSON export.");
+        window.alert(
+          "Invalid task file. Please select a valid JSON export."
+        );
         return;
       }
 
       setTasks(importedData);
       setEditingTask(null);
 
+      // Clear old search and filters after importing
       setFilters({
         searchTerm: "",
         status: "all",
@@ -275,7 +269,9 @@ const canReorder =
 
       window.alert("Tasks imported successfully!");
     } catch {
-      window.alert("Could not import the file. Please check the JSON file.");
+      window.alert(
+        "Could not import the file. Please check the JSON file."
+      );
     } finally {
       input.value = "";
     }
@@ -284,9 +280,8 @@ const canReorder =
   return (
     <div className={isDarkMode ? "dark" : ""}>
 
-      <main className="min-h-screen bg-gray-100 p-4 transition-colors duration-300 dark:bg-gray-950 sm:p-6 lg:p-8">
-
-        <div className="mx-auto max-w-7xl space-y-6">
+      <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-gray-100 p-3 transition-colors duration-300 dark:bg-gray-950 sm:p-6 lg:p-8">
+<div className="mx-auto w-full max-w-7xl min-w-0 space-y-6">
 
           {/* Dashboard heading and theme toggle */}
           <header className="flex flex-wrap items-center justify-between gap-4">
@@ -308,7 +303,9 @@ const canReorder =
                 setIsDarkMode((previous) => !previous)
               }
               aria-label={
-                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+                isDarkMode
+                  ? "Switch to light mode"
+                  : "Switch to dark mode"
               }
               aria-pressed={isDarkMode}
               className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
@@ -444,7 +441,7 @@ const canReorder =
           {/* Add or edit task */}
           <section>
             <TaskForm
-            isDarkMode={isDarkMode}
+              isDarkMode={isDarkMode}
               key={editingTask?.id ?? "new-task"}
               onSubmit={handleTaskSubmit}
               initialTask={editingTask}
@@ -473,14 +470,14 @@ const canReorder =
             </h2>
 
             <TaskList
-  tasks={filteredTasks}
-  isDarkMode={isDarkMode}
-  onStatusChange={handleStatusChange}
-  onDelete={handleDelete}
-  onEdit={handleEdit}
-  onReorder={handleReorder}
-  canReorder={canReorder}
-/>
+              tasks={filteredTasks}
+              isDarkMode={isDarkMode}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onReorder={handleReorder}
+              canReorder={canReorder}
+            />
           </section>
 
         </div>
