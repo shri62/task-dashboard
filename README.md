@@ -30,3 +30,94 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+
+
+
+# Task Management Dashboard
+
+## About My Project
+
+I created a Task Management Dashboard using React and TypeScript.
+
+This application helps users organize and manage their daily tasks.
+
+Users can add, edit, delete, search, filter, and sort tasks.
+
+## Technologies Used
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- HTML
+- CSS
+- LocalStorage
+
+## Features
+
+- Add new tasks.
+- Edit existing tasks.
+- Delete tasks.
+- Search tasks by name.
+- Filter tasks by status and priority.
+- Sort tasks.
+- View total, completed, pending, and in-progress tasks.
+- Save tasks in LocalStorage.
+- Import and export tasks using JSON files.
+- Switch between light and dark mode.
+- Responsive design for desktop, tablet, and mobile.
+- Form validation with error messages.
+
+## Project Installation
+
+Clone the GitHub repository:
+
+```bash
+git clone https://github.com/shri62/task-dashboard.git
+```
+
+Go to the project folder:
+
+```bash
+cd task-dashboard
+```
+
+Install the required packages:
+
+```bash
+npm install
+```
+
+Start the application:
+
+```bash
+npm run dev
+```
+
+Open the local URL shown in your terminal to view the application.
+
+## Project Structure
+
+```text
+src/
+├── components/
+│   ├── TaskList/
+│   ├── TaskForm/
+│   ├── TaskFilter/
+│   └── Dashboard/
+├── types/
+│   └── index.ts
+├── utils/
+│   └── taskUtils.ts
+├── App.tsx
+└── main.tsx
+```
+
+## What I Learned
+
+Through this project, I practiced React components, TypeScript, props, state management, forms, and event handling.
+
+I also learned how to organize a project and build a responsive web application.
+
+
